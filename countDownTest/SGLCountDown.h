@@ -7,12 +7,23 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
+//倒计时通知
+UIKIT_EXTERN NSString * const SGLCountDownNotification;
 
+/**
+ 倒计时回调
+
+ @param day 天
+ @param hour 小时
+ @param minute 分
+ @param second 秒
+ @param nowTimestamp 一直增大变化的当前时间戳
+ */
 typedef void(^SGLCountDownBlock)(NSInteger day,NSInteger hour,NSInteger minute,NSInteger second,NSTimeInterval nowTimestamp);
 
-typedef void(^SGLCountDownSecBlock)(NSTimeInterval nowTimestamp);
 
 /**
  倒计时,注意是秒级
@@ -42,20 +53,21 @@ typedef void(^SGLCountDownSecBlock)(NSTimeInterval nowTimestamp);
 
 
 /**
- 每秒都回调
-
- @param secBlock 返回当前时间戳,主要用于列表cell计算
- */
--(void)countDownWithSecBlock:(SGLCountDownSecBlock)secBlock;
-
-
-/**
  根据时间差 直接格式化
 
  @param timeInterval 时间差
  @param completeBlock 天,时,分,秒,当前时间戳
  */
 +(void)getTimeWithTimeInterval:(long long)timeInterval completeBlock:(SGLCountDownBlock)completeBlock;
+
+
+
+/**
+ 增加倒计时通知,全局通知,方便 多个对应,noti.object [number 类型]
+ */
+-(void)addCountDownNotification;
+
+
 
 /**
  销毁定时,要主动调用

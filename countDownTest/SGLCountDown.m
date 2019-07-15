@@ -34,11 +34,12 @@
 @end
 
 
+//倒计时通知
+NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 
 @interface SGLCountDown ()
-//每秒都在回调
-@property (nonatomic,copy) SGLCountDownSecBlock secBlock;
 
+@property (nonatomic,assign) BOOL isNotification;
 
 @property(nonatomic,retain) dispatch_source_t timer;
 @property (nonatomic,assign) NSTimeInterval nowTimeInterval;
@@ -63,6 +64,7 @@
         
         self.nowTimeInterval = [[NSDate date] timeIntervalSince1970];
         self.blockArr = [NSMutableArray array];
+        self.isNotification = NO;
     }
     return self;
 }
@@ -77,16 +79,15 @@
 
 }
 
--(void)countDownWithSecBlock:(SGLCountDownSecBlock)secBlock
+
+-(void)addCountDownNotification
 {
-    if (secBlock) {
-        self.secBlock = secBlock;
-        [self countDownWithTimeInterval:1 completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second, NSTimeInterval nowTimestamp) {
-            
-        }];
-    }
-    
+    self.isNotification = YES;
+    [self countDownWithTimeInterval:1 completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second, NSTimeInterval nowTimestamp) {
+        
+    }];
 }
+
 -(void)countDownWithTimeInterval:(NSTimeInterval)timeInterval completeBlock:(SGLCountDownBlock)completeBlock
 {
     if (completeBlock!=nil) {
@@ -105,10 +106,10 @@
             dispatch_source_set_timer(_timer,dispatch_walltime(NULL, 0),1.0*NSEC_PER_SEC, 0); //每秒执行
             dispatch_source_set_event_handler(_timer, ^{
                 self.nowTimeInterval ++;
-                
-                if (self.secBlock) {
-                    self.secBlock(self.nowTimeInterval);
+                if (self.isNotification) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SGLCountDownNotification object:[NSNumber numberWithDouble:self.nowTimeInterval]];
                 }
+           
                 for (SGLCountDownModel * model in self->_blockArr) {
                     if(model.timeInterval<=0){ //倒计时结束，关闭
                         dispatch_async(dispatch_get_main_queue(), ^{
@@ -172,4 +173,6 @@
 -(void)dealloc{
     NSLog(@"%s dealloc",object_getClassName(self));
 }
+
+
 @end

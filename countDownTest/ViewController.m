@@ -37,7 +37,7 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
     self.countDown = [[SGLCountDown alloc] init];
     
      __weak typeof(self) weakSelf = self;
-    //抢购倒计
+    //1:----抢购倒计
     NSTimeInterval startTimeInterval = [[NSDate date] timeIntervalSince1970];
     [self.countDown countDownWithStratTimeStamp:startTimeInterval finishTimeStamp:startTimeInterval+60*60*24*9 completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second,NSTimeInterval nowTimestamp) {
         
@@ -48,7 +48,7 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
         else
         {
             if (second == 0) {
-                weakSelf.timeLabel.text =  @"活动已开始";
+                weakSelf.timeLabel.text =  @"活动已结束";
             }
             else
             {
@@ -58,8 +58,8 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
         }
     }];
     
-    //抢购倒计 第二个
-    [self.countDown countDownWithStratTimeStamp:startTimeInterval finishTimeStamp:startTimeInterval+60*60*4+12 completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second,NSTimeInterval nowTimestamp) {
+    //2:----抢购倒计 第二个
+    [self.countDown countDownWithStratTimeStamp:startTimeInterval finishTimeStamp:startTimeInterval+12 completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second,NSTimeInterval nowTimestamp) {
         
         
         if (startTimeInterval > nowTimestamp) {
@@ -68,7 +68,7 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
         else
         {
             if (second == 0) {
-                weakSelf.timeLabel1.text =  @"活动已开始";
+                weakSelf.timeLabel1.text =  @"活动已结束";
             }
             else
             {
@@ -79,7 +79,7 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
     }];
     
     
-    //列表
+    //3:----列表
     self.dataArr = [NSMutableArray array];
     for (int i= 0; i<100; i++) {
         CellModel * model = [CellModel new];
@@ -111,30 +111,38 @@ static NSString * cellIdentifire = @"TimeTableViewCell";
     [self.myTableView reloadData];
 
    
-    [self.countDown countDownWithSecBlock:^(NSTimeInterval nowTimestamp) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSArray  *cells = weakSelf.myTableView.visibleCells; //取出屏幕可见ceLl
-            for (TimeTableViewCell * cell in cells) {
-                if (cell.cellModel.startTime > nowTimestamp) {
-                    cell.cellModel.timeStr = @"活动未开始";
-                }
-
-                else
-                {
-                    //格式化
-                    [SGLCountDown getTimeWithTimeInterval:cell.cellModel.finishTime - nowTimestamp completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second, NSTimeInterval nowTimestamp) {
-                        cell.cellModel.timeStr = [NSString stringWithFormat:@"活动倒计时还剩:%ld天%ld小时%ld分%ld秒",(long)day,hour,minute,second];
-                    }];
-
-                }
-            }
-
-            [weakSelf.myTableView reloadData];
-
-        });
-    }];
-//
+    //打开全局通知
+    [self.countDown addCountDownNotification];
     
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reloadCellTime:) name:SGLCountDownNotification object:nil];
+
+    
+}
+-(void)reloadCellTime:(NSNotification *)noti
+{
+    NSNumber * number = (NSNumber*)noti.object;
+    double nowTimestamp = number.doubleValue;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSArray  *cells = self.myTableView.visibleCells; //取出屏幕可见ceLl
+        for (TimeTableViewCell * cell in cells) {
+            if (cell.cellModel.startTime > nowTimestamp) {
+                cell.cellModel.timeStr = @"活动未开始";
+            }
+            
+            else
+            {
+                //格式化
+                [SGLCountDown getTimeWithTimeInterval:cell.cellModel.finishTime - nowTimestamp completeBlock:^(NSInteger day, NSInteger hour, NSInteger minute, NSInteger second, NSTimeInterval nowTimestamp) {
+                    cell.cellModel.timeStr = [NSString stringWithFormat:@"活动倒计时还剩:%ld天%ld小时%ld分%ld秒",(long)day,hour,minute,second];
+                }];
+                
+            }
+        }
+        
+        [self.myTableView reloadData];
+        
+    });
 }
 - (IBAction)timeAction:(id)sender {
     self.timeBtn.enabled = NO;
