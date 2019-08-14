@@ -13,7 +13,7 @@
  [self.timeBtn setTitle:[NSString stringWithFormat:@"%@S",strTime] forState:UIControlStateDisabled];
  
  [self.timeBtn setTitleColor: [UIColor grayColor] forState:UIControlStateNormal];
-
+ 
  self.timeBtn.titleLabel.transform = CGAffineTransformMakeScale(1, 1);
  self.timeBtn.titleLabel.alpha     = 1;
  
@@ -61,8 +61,6 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 - (instancetype)init{
     self = [super init];
     if (self) {
-        
-        self.nowTimeInterval = [[NSDate date] timeIntervalSince1970];
         self.blockArr = [NSMutableArray array];
         self.isNotification = NO;
     }
@@ -73,10 +71,10 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 
 -(void)countDownWithStratTimeStamp:(long long)starTimeStamp finishTimeStamp:(long long)finishTimeStamp completeBlock:(SGLCountDownBlock)completeBlock
 {
-
-        NSTimeInterval timeInterval = (finishTimeStamp - starTimeStamp);
-        [self countDownWithTimeInterval:timeInterval completeBlock:completeBlock];
-
+    
+    NSTimeInterval timeInterval = (finishTimeStamp - starTimeStamp);
+    [self countDownWithTimeInterval:timeInterval completeBlock:completeBlock];
+    
 }
 
 
@@ -90,6 +88,7 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 
 -(void)countDownWithTimeInterval:(NSTimeInterval)timeInterval completeBlock:(SGLCountDownBlock)completeBlock
 {
+    self.nowTimeInterval = [[NSDate date] timeIntervalSince1970];
     if (completeBlock!=nil) {
         SGLCountDownModel * model = [SGLCountDownModel new];
         model.timeInterval = timeInterval;
@@ -99,7 +98,6 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
     
     __block int timeout = timeInterval; //倒计时时间
     if (_timer==nil) {
-
         if (timeout!=0) {
             dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
             _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,queue);
@@ -109,8 +107,8 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
                 if (self.isNotification) {
                     [[NSNotificationCenter defaultCenter] postNotificationName:SGLCountDownNotification object:[NSNumber numberWithDouble:self.nowTimeInterval]];
                 }
-           
-                for (SGLCountDownModel * model in self->_blockArr) {
+                NSArray * countDownArr = self.blockArr.copy;
+                for (SGLCountDownModel * model in countDownArr) {
                     if(model.timeInterval<=0){ //倒计时结束，关闭
                         dispatch_async(dispatch_get_main_queue(), ^{
                             model.countDownBlock(0,0,0,0,self.nowTimeInterval);
@@ -125,15 +123,14 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
                         int second = model.timeInterval-days*24*3600-hours*3600-minute*60;
                         
                         dispatch_async(dispatch_get_main_queue(), ^{
-                           model.countDownBlock(days,hours,minute,second,self.nowTimeInterval);
+                            model.countDownBlock(days,hours,minute,second,self.nowTimeInterval);
                             
                         });
                         model.timeInterval--;
-                        
-                        
+ 
                     }
                 }
-    
+                
             });
             dispatch_resume(_timer);
         }
@@ -141,13 +138,15 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 }
 /**
  *  主动销毁定时器
-
+ 
  */
 -(void)destoryTimer{
     if (_timer) {
         dispatch_source_cancel(_timer);
         _timer = nil;
     }
+    NSLog(@"\n----销毁定时器-------\n");
+    [self.blockArr removeAllObjects];
 }
 
 -(NSDate *)dateWithLongLong:(long long)longlongValue{
@@ -176,3 +175,4 @@ NSString * const SGLCountDownNotification = @"SGLCountDownNotification";
 
 
 @end
+
